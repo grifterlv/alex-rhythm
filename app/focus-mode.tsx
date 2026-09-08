@@ -23,7 +23,7 @@ export default function FocusMode(p:Props){
  const total=focusElapsed(p.savedMs,p.running?p.startedAt:undefined,p.now);
  const paused=!p.running&&!p.done&&p.savedMs>0;
  return <Dialog open={p.open} onOpenChange={v=>!v&&p.onClose()}><DialogContent className="focus-space" showCloseButton={false} onOpenAutoFocus={e=>{e.preventDefault();heading.current?.focus()}}>
-  <header className="focus-space-header"><Button variant="ghost" onClick={p.onClose}><ArrowLeft size={18}/>{tr("返回日程")}</Button><span className="focus-wordmark"><Leaf size={19}/>{tr("留白 · 专注空间")}</span><LanguagePicker/><span className={'focus-save-state '+(!p.online?'offline':'')} role="status">{!p.online?tr("连接中断"):p.busy?tr("正在保存…"):p.syncing?tr("正在同步…"):tr("私人记录已连接")}</span></header>
+  <header className="focus-space-header"><div className="focus-header-leading"><Button variant="ghost" onClick={p.onClose}><ArrowLeft size={18}/>{tr("返回日程")}</Button><span className="focus-wordmark"><Leaf size={19}/>{tr("留白 · 专注空间")}</span></div><div className="focus-header-actions header-controls"><LanguagePicker/><span className={'focus-save-state '+(!p.online?'offline':'')} role="status">{!p.online?tr("连接中断"):p.busy?tr("正在保存…"):p.syncing?tr("正在同步…"):tr("私人记录已连接")}</span></div></header>
   <div className="focus-space-body">
    <div className="focus-activity-stage">
     {p.loading?<div className="scene-loading"><Loader2 className="spin"/>{tr("正在接上你的一天…")}</div>:<ActivityScene scene={displayScene} moving={p.running&&motion&&!reduced}/>}

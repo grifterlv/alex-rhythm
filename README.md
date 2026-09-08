@@ -91,3 +91,7 @@ Navigation, planning dialogs, focus controls, routine labels and notes, dates, d
 ### Add directly to unscheduled time
 
 Unscheduled gaps in the overview display their full time range and an Add task action in all three interface languages. Click anywhere in a gap to open the existing editor with its start and end prefilled. Nothing changes until Save; scheduling only part of a gap leaves the rest available. Gaps crossing period boundaries use the selected visible range, and unchanged overnight times retain their day offset. Existing overlap validation and revision checks protect saved plans. No database or timer changes are required.
+
+### Stable multilingual navigation
+
+Overview tabs keep labels on one line. On narrow screens the tab strip scrolls horizontally, while the selected tab remains keyboard-accessible and the rest of the page keeps its width. The planner and focus headers share fixed language and connection-status columns so translations and saving states do not move the language picker. Mobile layouts keep a consistent picker width and omit tab icons to make room for labels. Status icons reserve the same space while loading or connected.
