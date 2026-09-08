@@ -1,6 +1,6 @@
 # Alex Rhythm
 
-A private, Chinese-language daily planner for Alex with an ADHD-friendly workflow.
+A private daily planner for Alex with an ADHD-friendly workflow, available in English, Chinese, and Spanish.
 
 ## V1 daily planning
 
@@ -79,3 +79,11 @@ The default overview presents a proportional waking-day plan map, three daytime 
 Morning, afternoon, and evening cards have matching original scene covers, with separate readable text headers and category icon badges on tasks. The covers use responsive local WebP files, reserved aspect ratios, and lazy loading. Task data, timers, detail dialogs, and the mobile period selector retain their existing behavior. Artwork prompts and provenance are in `public/images/day-overview/ASSETS.md`. Source image inspection, TypeScript, and the production build are used for validation; browser/visual QA has not been performed.
 
 Daytime rows and free gaps share one duration scale across desktop and mobile: 30 minutes = 5rem. Heights use each group's clipped start/end range, including merged steps. Task rows retain a 5rem readability floor, gaps retain 2.75rem, and wrapped content may expand a row. No maximum-height clamp compresses long blocks. Pastel surfaces and category edges make each block's extent visible; the header notes the short-row exception. The full-day map remains strictly proportional, and the detailed agenda, data, and timing behavior are unchanged.
+
+### Interface languages
+
+Use the language picker in the top bar or focus space to switch between English, Chinese, and Spanish without reloading. The selection is remembered in this browser and shared with other tabs on the same device; a first visit follows the browser language when supported.
+
+Navigation, planning dialogs, focus controls, routine labels and notes, dates, duration labels, validation messages, and CSV headers follow the selected language. Custom task titles and notes remain in their original language. Display translations do not rewrite stored plans, active timer timestamps, task IDs, or drafts. Planning capture recognizes common English and Spanish durations and appointment times in addition to Chinese; extracted details remain editable and require confirmation.
+
+`lib/i18n.ts` and `lib/locales.ts` define the presentation helpers and message catalog. `app/language-provider.tsx` owns the device-local preference; no database migration is required. Language tests cover catalog placeholders, default routines, preserved custom content and timer state, and multilingual planning input. Browser interaction and visual QA have not been performed for this iteration.

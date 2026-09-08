@@ -7,8 +7,8 @@ export type FocusTarget={date:string,id:string};
 export function sceneForActivity(activity:{title:string,category:Category}|undefined):FocusScene{
  if(!activity)return 'rest';
  const title=activity.title;
- if(/睡|休息|散步|社交|通话|买菜|购物|sleep|rest|walk|grocer|shopping/i.test(title))return 'rest';
- if(/读书|阅读|read|book/i.test(title))return 'reading';
+ if(/睡|休息|散步|社交|通话|买菜|购物|sleep|rest|walk|grocer|shopping|dormir|descans|pasear|caminar|compras/i.test(title))return 'rest';
+ if(/读书|阅读|read|book|leer|lectura|libro/i.test(title))return 'reading';
  if(activity.category==='cat')return 'cats';
  if(activity.category==='meal')return 'kitchen';
  if(activity.category==='move')return 'cycling';

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import {LanguageProvider} from './language-provider';
 
 export const metadata: Metadata = {
   title: "留白 · Alex 的一天",
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><LanguageProvider>{children}</LanguageProvider></body>
     </html>
   );
 }

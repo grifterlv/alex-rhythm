@@ -94,3 +94,4 @@ console.log('PASS: forward focus, grouped replan differences, removed tasks, del
 await import('./focus-check');
 await import('./recovery-check');
 await import('./overview-check');
+await import('./i18n-check');

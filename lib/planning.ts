@@ -27,20 +27,31 @@ export function fixedRoutine(s=defaults):Block[]{return [
 export function routine(s=defaults):Day {const b=fixedRoutine(s);b.push(block('cats-am','陪猫玩 ①','cat',s.breakfast+30,s.breakfast+45),block('cats-pm','陪猫玩 ②','cat',s.dinner+45,s.dinner+60));if(s.gym&&s.lunch+90+s.gym<=s.dinner-s.cook)b.push(block('gym','健身房与往返','move',s.lunch+90,s.lunch+90+s.gym,false,'含换装、往返和洗澡；按脚踝与肩膀恢复情况调整。'));return {mode:'custom',goal:'',blocks:b.sort((a,b)=>a.start-b.start),logs:[]}}
 function chineseNum(v:string){if(/^\d+(\.\d+)?$/.test(v))return Number(v);const digits:Record<string,number>={'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};if(v==='十')return 10;if(v.includes('十')){const [a,b]=v.split('十');return (a?digits[a]:1)*10+(b?digits[b]:0)}return digits[v]??NaN}
 export function extractMinutes(text:string):number|null{
+ // English and Spanish durations. Ambiguous ranges remain a follow-up question.
+ const latin=text.replace(/(\d),(\d)/g,'$1.$2');
+ if(/\d+(?:\.\d+)?\s*(?:-|–|to|a)\s*\d+(?:\.\d+)?\s*(?:hours?|hrs?|h\b|horas?|minutes?|mins?|minutos?)/i.test(latin))return null;
+ if(/\b(?:half an? hour|media hora)\b/i.test(latin))return 30;
+ const hours=latin.match(/\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|horas?|h\b)(?:\s*(?:and|y)?\s*(half|media)\b|\s*(?:and|y)?\s*(\d+)\s*(?:minutes?|mins?|minutos?|m\b))?/i);
+ if(hours){const value=Math.round(Number(hours[1])*60+(hours[2]?30:Number(hours[3]??0)));return value>=5&&value<=600?value:null}
+ const mins=latin.match(/\b(\d+)\s*(?:minutes?|mins?|minutos?)\b/i);if(mins){const value=Number(mins[1]);return value>=5&&value<=600?value:null}
  const half=text.match(/([\d一二两三四五六七八九十]+)(?:个)?半小时/);if(half)return chineseNum(half[1])*60+30;
  if(/半(?:个)?小时|half an? hour/i.test(text))return 30;
  const range=text.match(/([\d一二两三四五六七八九十]+)\s*(?:到|至|[-–~])\s*([\d一二两三四五六七八九十]+)\s*(小时|分钟|hours?|minutes?)/i);if(range)return null;
  const m=text.match(/([\d.一二两三四五六七八九十]+)\s*(?:个)?\s*(小时|分钟|分(?!钟)|hours?|hrs?|minutes?|mins?)\s*(半)?/i);if(!m)return null;const n=chineseNum(m[1]);const value=Math.round(n*(/小时|hour|hr/i.test(m[2])?60:1)+(m[3]?30:0));return value>=5&&value<=600?value:null;
 }
 export function extractStart(text:string):number|null{
+ const latin=text.match(/\b(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?(?=\s|[,;.]|$)/i);
+ if(latin){const hour=Number(latin[1]),minute=Number(latin[2]??0);return hour>=1&&hour<=12&&minute<60?(hour%12+(latin[3].toLowerCase()==='p'?12:0))*60+minute:null}
+ const spanish=text.match(/\ba las\s+(\d{1,2})(?::(\d{2}))?\s*(?:de la\s+(mañana|tarde|noche))?/i);
+ if(spanish){let hour=Number(spanish[1]);const minute=Number(spanish[2]??0);if(/tarde|noche/.test(spanish[3]??'')&&hour<12)hour+=12;return hour<24&&minute<60?hour*60+minute:null}
  const m=text.match(/(早上|上午|中午|下午|傍晚|晚上)?\s*(\d{1,2})[:：](\d{2})/);if(m){let h=Number(m[2]);if(/下午|傍晚|晚上/.test(m[1]??'')&&h<12)h+=12;const min=Number(m[3]);return h<24&&min<60?h*60+min:null}
  const c=text.match(/(早上|上午|中午|下午|傍晚|晚上)\s*([\d一二两三四五六七八九十]+)\s*点(半|一刻|三刻|\d{1,2}分?)?/);if(!c)return null;let h=chineseNum(c[2]);if(/下午|傍晚|晚上/.test(c[1])&&h<12)h+=12;const min=c[3]==='半'?30:c[3]==='一刻'?15:c[3]==='三刻'?45:parseInt(c[3]??'0');return h<24&&min<60?h*60+min:null;
 }
 export function parseBrainDump(input:string,date:string):Task[]{
  // Conservative extraction: keep the user's words, then explicitly ask for missing duration.
- const clauses=input.replace(/(?:然后|另外|再来|接着|以及|还要|还需要|还想)/g,'\n').replace(/和(?=(?:买|写|修|学|读|做|整理|处理|准备|联系|去))/g,'\n').replace(/\s+and\s+(?=(?:buy|write|fix|read|study|prepare|call|meet)\b)/gi,'\n').split(/[\n，,；;。]+/).map(x=>x.trim().replace(/^[-•\d]+[.)、]\s*/,''));const merged:string[]=[];
- for(const part of clauses){if(!part)continue;const timeOnly=/^(?:大约|大概|预计|需要|花|用|耗时)?\s*[\d一二两三四五六七八九十半.]+\s*(?:个)?\s*(小时|分钟|分|hours?|minutes?)(?:半)?$/i.test(part);if(timeOnly&&merged.length)merged[merged.length-1]+='，'+part;else merged.push(part)}
- return merged.slice(0,30).map(raw=>{const category:Category=/开会|会议|通话|call|meeting|代码|开发|修复|研究|工作|项目|code|debug/i.test(raw)?'work':/买菜|购物|做饭|清洁|家务|grocer/i.test(raw)?'meal':/健身|骑车|锻炼|运动|理疗|gym|bike/i.test(raw)?'move':/猫|cat/i.test(raw)?'cat':/读书|阅读|睡觉|read/i.test(raw)?'rest':'work';return {id:crypto.randomUUID(),title:raw.slice(0,160),category,minutes:extractMinutes(raw),priority:/最重要|优先|必须|一定|务必|urgent|must/i.test(raw)?1:/有空|顺便|可以以后|不急|maybe/i.test(raw)?3:2,fixedStart:extractStart(raw),status:'todo',note:raw.length>160?raw.slice(0,600):'',createdAt:Date.now(),updatedAt:Date.now(),sourceDate:date}});
+ const clauses=input.replace(/(?:然后|另外|再来|接着|以及|还要|还需要|还想)/g,'\n').replace(/和(?=(?:买|写|修|学|读|做|整理|处理|准备|联系|去))/g,'\n').replace(/\s+and\s+(?=(?:buy|write|fix|read|study|prepare|call|meet)\b)/gi,'\n').replace(/\s+y\s+(?=(?:comprar|escribir|arreglar|leer|estudiar|preparar|llamar|reunir)\b)/gi,'\n').split(/\n|[，；;。]|(?<!\d),|,(?!\d)|\.(?=\s|$)/).map(x=>x.trim().replace(/^(?:[-•]\s+|\d+[.)、]\s+)/,''));const merged:string[]=[];
+ for(const part of clauses){if(!part)continue;const timeOnly=/^(?:大约|大概|预计|需要|花|用|耗时|about|around|aproximadamente)?\s*[\d一二两三四五六七八九十半.,]+\s*(?:个)?\s*(小时|分钟|分|hours?|hrs?|h|minutes?|mins?|horas?|minutos?)(?:半)?$/i.test(part);if(timeOnly&&merged.length)merged[merged.length-1]+=(/\p{Script=Han}/u.test(part)?'，':', ')+part;else merged.push(part)}
+ return merged.slice(0,30).map(raw=>{const category:Category=/开会|会议|通话|call|meeting|代码|开发|修复|研究|工作|项目|code|debug|reuni[oó]n|llamada|c[oó]digo|trabajo|proyecto/i.test(raw)?'work':/买菜|购物|做饭|清洁|家务|grocer|comprar|compras|cocinar|limpiar|alimentos/i.test(raw)?'meal':/健身|骑车|锻炼|运动|理疗|gym|bike|gimnasio|bicicleta|ejercicio|entrenar/i.test(raw)?'move':/猫|cat|gatos?/i.test(raw)?'cat':/读书|阅读|睡觉|read|leer|lectura|dormir/i.test(raw)?'rest':'work';return {id:crypto.randomUUID(),title:raw.slice(0,160),category,minutes:extractMinutes(raw),priority:/最重要|优先|必须|一定|务必|urgent|must|importante|prioridad|debo/i.test(raw)?1:/有空|顺便|可以以后|不急|maybe|quiz[aá]s|si hay tiempo/i.test(raw)?3:2,fixedStart:extractStart(raw),status:'todo',note:raw.length>160?raw.slice(0,600):'',createdAt:Date.now(),updatedAt:Date.now(),sourceDate:date}});
 }
 function overlaps(a:Block,b:Block){return a.start<b.end&&a.end>b.start}
 function gaps(blocks:Block[],from:number,to:number){const out:{start:number,end:number}[]=[];let cursor=from;for(const b of [...blocks].sort((a,b)=>a.start-b.start)){if(b.end<=cursor)continue;if(b.start>=to)break;if(b.start>cursor)out.push({start:cursor,end:Math.min(to,b.start)});cursor=Math.max(cursor,b.end)}if(cursor<to)out.push({start:cursor,end:to});return out}
@@ -57,7 +68,7 @@ export function propose(date:string,current:Day,s:Settings,tasks:Task[],draft:Pl
  const placeRoutine=(b:Block,min:number,max:number)=>{b={...b,nextStep:current.blocks.find(x=>x.id===b.id)?.nextStep};if(today&&current.blocks.some(x=>x.id===b.id&&x.start<time.planMinute))return;if(blocks.some(x=>x.id===b.id))return;if(b.start>=from&&add(b))return;const duration=b.end-b.start;const windows=gaps(blocks,Math.max(from,min),max).filter(g=>g.end-g.start>=duration).sort((a,c)=>Math.abs(a.start-b.start)-Math.abs(c.start-b.start));if(windows[0])add({...b,start:windows[0].start,end:windows[0].start+duration});else warnings.push(`「${b.title}」还没有合适的空档，请调整时长或约会。`)};
  placeRoutine(block('cats-am','陪猫玩 ①','cat',s.breakfast+30,s.breakfast+45),s.breakfast+30,s.bed-90);
  placeRoutine(block('cats-pm','陪猫玩 ②','cat',s.dinner+45,s.dinner+60),s.breakfast+30,s.bed-90);
- const explicitGym=selected.some(t=>t.category==='move'&&/健身|gym/i.test(t.title));if(explicitGym&&draft.gym)warnings.push('已按你选中的健身任务安排，默认健身房时间窗不重复添加。');
+ const explicitGym=selected.some(t=>t.category==='move'&&/健身|gym|gimnasio/i.test(t.title));if(explicitGym&&draft.gym)warnings.push('已按你选中的健身任务安排，默认健身房时间窗不重复添加。');
  if(draft.gym&&!explicitGym)placeRoutine(block('gym','健身房与往返','move',s.lunch+90,s.lunch+90+draft.gym,false,'含往返、准备、训练和洗澡；按恢复情况调整。'),s.lunch+60,s.dinner-s.cook);
  if(s.buffer){const windows=gaps(blocks,from,s.bed-90).filter(g=>g.end-g.start>=s.buffer);const evening=[...windows].reverse()[0];if(evening)add(block('buffer','留白 · 休息或临时变化','life',evening.end-s.buffer,evening.end));else warnings.push('没有完整的缓冲时间，请减少一些任务。')}
  let budget=draft.recoveryMinutes??Infinity;
@@ -66,10 +77,10 @@ export function propose(date:string,current:Day,s:Settings,tasks:Task[],draft:Pl
   if(!t.minutes){unplaced.push({id:t.id,title:t.title,reason:'请确认预计时长'});continue}
   const doneMinutes=frozen.filter(b=>b.taskId===t.id).reduce((sum,b)=>sum+Math.max(b.done?b.end-b.start:0,current.logs.filter(l=>l.blockId===b.id).reduce((n,l)=>n+(l.end-l.start)/60000,0)),0);
   const needed=Math.max(0,t.minutes-Math.floor(doneMinutes));if(!needed)continue;let remaining=needed;const candidate=[...blocks];let count=0;
-  const splittable=t.category==='work'&&!/开会|会议|通话|电话|call|meeting/i.test(t.title);
+  const splittable=t.category==='work'&&!/开会|会议|通话|电话|call|meeting|reuni[oó]n|llamada/i.test(t.title);
   if(budget<5||(!splittable&&budget<needed)){unplaced.push({id:t.id,title:t.title,reason:'超出这次留下的时间，继续保留在待办池。'});continue}
   remaining=Math.min(needed,budget);const allocation=remaining;
-  const earliest=t.category==='move'&&/健身|gym/i.test(t.title)?Math.max(from,s.lunch+60):from;
+  const earliest=t.category==='move'&&/健身|gym|gimnasio/i.test(t.title)?Math.max(from,s.lunch+60):from;
   for(const g of gaps(candidate,earliest,s.bed-90)){if(!splittable&&g.end-g.start<remaining)continue;let cursor=g.start;while(remaining>=5&&g.end-cursor>=5){const len=Math.min(remaining,splittable?chunk:remaining,g.end-cursor);if(len<5)break;candidate.push(taskBlock(t,cursor,cursor+len,100+count++));cursor+=len;remaining-=len;if(t.category==='work'&&g.end-cursor>=rest){candidate.push(block(`break-${t.id}-${count}`,'短休息','life',cursor,cursor+rest));cursor+=rest}}
    if(remaining===0)break;
   }
