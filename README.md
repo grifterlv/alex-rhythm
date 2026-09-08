@@ -1,4 +1,4 @@
-# 留白 · Alex 的一天
+# Alex Rhythm
 
 A private, Chinese-language daily planner for Alex with an ADHD-friendly workflow.
 
@@ -52,7 +52,7 @@ Validation: `node tests/planner/run.mjs`, `npx tsc --noEmit`, and the Sites prod
 
 ### V3 focus space
 
-Enter through the sidebar's 专注空间 or the current-task card's 进入专注空间 button. Opening/closing the view is independent of starting/pausing an actual session. The focused block stays pinned while paused; the true active server session takes priority. Accumulated time combines saved logs for that block with the current wall-clock interval.
+Open the focus space from the sidebar or the current-task card. Opening/closing the view is independent of starting/pausing an actual session. The focused block stays pinned while paused; the true active server session takes priority. Accumulated time combines saved logs for that block with the current wall-clock interval.
 
 The six activity scenes use original procedural Three.js geometry, with articulated limbs and small activity-specific motions. The renderer is dynamically imported on entry, caps rendering at 24 fps and DPR 1.5, stops requesting frames while hidden/paused/static, respects reduced motion, and disposes resources on exit. Geometry tests validate bounded finite transforms and material cleanup. WebGL/GPU rendering and browser interactions have not been visually tested in this iteration.
 
