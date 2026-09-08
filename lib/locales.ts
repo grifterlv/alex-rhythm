@@ -748,17 +748,17 @@ export const messages: Record<string, readonly [string, string]> = {
     "Give the rest of today a little direction.",
     "Dale un poco de rumbo al resto del día."
   ],
-  "今天还能给灵活任务留多久？": [
-    "How much time is left for flexible tasks today?",
-    "¿Cuánto tiempo queda para tareas flexibles hoy?"
+  "今天还想花多少时间处理待办？": [
+    "How much time would you like to spend on to-dos for the rest of today?",
+    "¿Cuánto tiempo quieres dedicar a tus pendientes durante el resto del día?"
   ],
   "今天先不加任务": [
     "No more tasks today",
     "No añadir más tareas hoy"
   ],
-  "这是任务总用时；三餐、睡觉、健身和已有约会另外保留。": [
-    "This is your task budget. Meals, sleep, gym and existing appointments are kept separately.",
-    "Este es el tiempo total para tareas. Comidas, sueño, gimnasio y citas se conservan aparte."
+  "默认 {0}，你可以调整。这里只计算处理待办的时间；三餐、睡觉、健身、已有约会和休息时间另计。": [
+    "The default is {0}; you can change it. This limit counts time spent on to-dos. Meals, sleep, gym, existing appointments and breaks are counted separately.",
+    "El valor inicial es {0}; puedes cambiarlo. Este límite cuenta el tiempo dedicado a tus pendientes. Las comidas, el sueño, el gimnasio, las citas existentes y los descansos se cuentan aparte."
   ],
   "现在的精力怎么样？": [
     "How is your energy right now?",
@@ -892,9 +892,9 @@ export const messages: Record<string, readonly [string, string]> = {
     "Keep your routine, or go back to add tasks.",
     "Mantén tu rutina o vuelve para añadir tareas."
   ],
-  "这次给灵活任务留出 ": [
-    "Time set aside for flexible tasks: ",
-    "Tiempo reservado para tareas flexibles: "
+  "这次处理待办的时间上限：": [
+    "Time limit for your to-dos: ",
+    "Límite de tiempo para tus pendientes: "
   ],
   "修改": [
     "Edit",
@@ -969,10 +969,10 @@ export const messages: Record<string, readonly [string, string]> = {
     "Volver a ajustar"
   ],
   "这次最多再安排 ": [
-    "Additional flexible-task limit: ",
-    "Límite adicional para tareas flexibles: "
+    "Time limit for additional to-dos: ",
+    "Límite de tiempo para pendientes adicionales: "
   ],
-  " 灵活任务；固定作息和约会保留。": [
+  " 处理待办；固定作息和约会保留。": [
     "; routines and appointments are kept.",
     "; se mantienen las rutinas y citas."
   ],
