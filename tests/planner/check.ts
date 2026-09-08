@@ -1,0 +1,96 @@
+import assert from 'node:assert/strict';
+import {GET,PUT} from '../../app/api/planner/route';
+import {clock,template,daySchema,localEpoch,localInput,parseLocalInput,totals} from '../../lib/planner';
+const request=(method:string,user:string,body?:unknown)=>new Request('https://planner.test/api/planner?date=2026-09-06',{method,headers:{'oai-authenticated-user-id':user,'Content-Type':'application/json','Origin':'https://planner.test'},body:body?JSON.stringify(body):undefined});
+const state=async(user='alex')=>{const r=await GET(request('GET',user));assert.equal(r.status,200);return r.json()};
+for(const mode of ['normal','shopping','slow'] as const){const d=template(mode);assert.equal(daySchema.safeParse(d).success,true);assert.equal(d.blocks[0].start,450);assert.equal(d.blocks.at(-1)!.end,1890);d.blocks.forEach((b,i)=>{if(i)assert.equal(b.start,d.blocks[i-1].end)});assert.equal(totals(d,null,'2026-09-06',Date.now()).find(t=>t.cat==='work')!.planned,420);assert.equal(d.blocks.filter(b=>b.category==='cat'&&b.title.includes('玩')).reduce((s,b)=>s+b.end-b.start,0),30)}
+assert.equal(clock(Date.parse('2026-09-07T04:00:00Z')).planDate,'2026-09-06');
+assert.equal(new Date(localEpoch('2026-09-06',840)).toISOString(),'2026-09-06T18:00:00.000Z');
+assert.equal(new Date(localEpoch('2026-11-10',840)).toISOString(),'2026-11-10T19:00:00.000Z');
+assert.equal(localInput(parseLocalInput('2026-09-06T23:15')),'2026-09-06T23:15');
+assert.throws(()=>localEpoch('2026-03-08',150));
+const unauthorized=await GET(new Request('https://planner.test/api/planner?date=2026-09-06'));assert.equal(unauthorized.status,401);
+assert.equal((await state()).revision,0);
+const d=template();d.goal='完成产品原型';
+let r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:0,active:null,days:{'2026-09-06':d}}));assert.equal(r.status,200);
+let s=await state();assert.equal(s.days['2026-09-06'].goal,d.goal);assert.equal(s.revision,1);
+const stale={...d,goal:'过时的页面'};r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:0,active:null,days:{'2026-09-06':stale}}));assert.equal(r.status,409);assert.equal((await state()).days['2026-09-06'].goal,d.goal);
+assert.deepEqual((await state('sabrina')).days,{});
+const startedAt=localEpoch('2026-09-06',510);const active={id:'timer-1',day:'2026-09-06',blockId:d.blocks[3].id,title:d.blocks[3].title,category:'work',startedAt};
+r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:1,active,days:{}}));assert.equal(r.status,200);
+s=await state();assert.equal(s.active.startedAt,startedAt);assert.equal(s.revision,2);
+d.logs=[{id:'timer-1',blockId:active.blockId,title:active.title,category:'work',start:startedAt,end:startedAt+25*60000}];
+r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:2,active:null,days:{'2026-09-06':d}}));assert.equal(r.status,200);
+s=await state();assert.equal(s.active,null);assert.equal(totals(s.days['2026-09-06'],null,'2026-09-06',Date.now()).find(t=>t.cat==='work')!.actual,25);
+const invalid=structuredClone(d);invalid.logs.push({...invalid.logs[0],id:'duplicate'});
+r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:3,active:null,days:{'2026-09-06':invalid}}));assert.equal(r.status,400);
+const overlapped=template();overlapped.blocks[1].start=450;r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:3,active:null,days:{'2026-09-06':overlapped}}));assert.equal(r.status,400);
+const badOrigin=new Request('https://planner.test/api/planner',{method:'PUT',headers:{'oai-authenticated-user-id':'alex','origin':'https://elsewhere.test'},body:'{}'});assert.equal((await PUT(badOrigin)).status,403);
+console.log('PASS: templates, Toronto DST, midnight, durable records, timer resume/stop, account isolation, optimistic concurrency, overlap rejection, origin checks');
+
+// Daily planning: previews are durable but never apply themselves.
+const {POST:planning}=await import('../../app/api/planning/route');
+const {defaults,routine,parseBrainDump,propose,freshDraft,fixedRoutine,settingsSchema}=await import('../../lib/planning');
+const {shiftDate}=await import('../../lib/planner');
+const target=shiftDate(clock().planDate,1);
+const api=async(action:string,rev:number,extra:Record<string,unknown>={})=>planning(new Request('https://planner.test/api/planning',{method:'POST',headers:{'oai-authenticated-user-id':'planner-user','origin':'https://planner.test','content-type':'application/json'},body:JSON.stringify({action,date:target,revision:rev,...extra})}));
+const read=async()=>{const r=await GET(new Request('https://planner.test/api/planner?date='+target,{headers:{'oai-authenticated-user-id':'planner-user'}}));assert.equal(r.status,200);return r.json()};
+const parsed=parseBrainDump('明天最重要的是修侧身识别，预计2小时。下午3点和Ted开会，30分钟。还要买菜，大约1小时。',target);
+assert.equal(parsed.length,3);assert.equal(parsed[0].minutes,120);assert.equal(parsed[0].priority,1);assert.equal(parsed[1].minutes,30);assert.equal(parsed[1].fixedStart,900);assert.equal(parsed[2].minutes,60);
+assert.equal(parseBrainDump('写代码和买菜',target).length,2);
+const initial=await read();assert.equal(initial.revision,0);assert.equal(initial.days[target],undefined);
+r=await api('capture',0,{input:'最重要的是修侧身识别，2小时。下午3点和Ted开会，30分钟。买菜，1小时。'});assert.equal(r.status,200);let pstate=(await r.json()).snapshot;
+assert.equal(pstate.tasks.length,3);assert.equal(pstate.days[target],undefined);assert.equal(pstate.draft.stage,'clarify');
+const ids=pstate.tasks.map((t:{id:string})=>t.id);
+r=await api('generate',pstate.revision,{selectedIds:ids,tasks:pstate.tasks,energy:'normal',gym:120});assert.equal(r.status,200);pstate=(await r.json()).snapshot;
+assert.equal(pstate.draft.stage,'preview');assert.equal(pstate.days[target],undefined);assert.equal(pstate.draft.proposal.conflicts.length,0);assert.equal(daySchema.safeParse(pstate.draft.proposal.day).success,true);
+for(const b of fixedRoutine(defaults).filter(b=>b.locked)){const planned=pstate.draft.proposal.day.blocks.find((x:typeof b)=>x.id===b.id);assert.equal(planned.start,b.start);assert.equal(planned.end,b.end)}
+const savedDraft=(await read()).draft;assert.equal(savedDraft.proposal.generatedAt,pstate.draft.proposal.generatedAt);
+r=await api('apply',pstate.revision);assert.equal(r.status,200);pstate=(await r.json()).snapshot;assert.ok(pstate.days[target]);assert.equal(pstate.draft.proposal,null);
+assert.equal(pstate.tasks.every((t:{status:string})=>t.status==='todo'),true);
+r=await api('generate',pstate.revision,{selectedIds:ids,tasks:pstate.tasks});assert.equal(r.status,200);pstate=(await r.json()).snapshot;
+const edited={...pstate.tasks[0],minutes:90};r=await api('task',pstate.revision,{task:edited});assert.equal(r.status,200);pstate=(await r.json()).snapshot;
+r=await api('apply',pstate.revision);assert.equal(r.status,409);assert.match((await r.json()).error,/变化/);
+r=await api('generate',pstate.revision,{selectedIds:[ids[0]],tasks:[edited]});assert.equal(r.status,200);pstate=(await r.json()).snapshot;
+assert.equal(pstate.tasks.length,3);assert.deepEqual(pstate.draft.selectedIds,[ids[0]]);
+const oldRevision=pstate.revision;r=await api('settings',oldRevision,{settings:{...defaults,wake:420,breakfast:435}});assert.equal(r.status,200);pstate=(await r.json()).snapshot;assert.equal(pstate.settings.wake,420);
+r=await api('task',oldRevision,{task:{...edited,title:'stale overwrite'}});assert.equal(r.status,409);assert.equal((await read()).tasks.some((t:{title:string})=>t.title==='stale overwrite'),false);
+const giant={...parsed[0],id:'huge-task',minutes:600};const normal={...parsed[2],id:'small-task',minutes:30};
+let prop=propose(target,routine(defaults),defaults,[giant,normal],{...freshDraft(),selectedIds:[giant.id,normal.id]});assert.equal(prop.unplaced.some(t=>t.id===giant.id),true);assert.equal(prop.day.blocks.some(b=>b.taskId===normal.id),true);assert.equal(daySchema.safeParse(prop.day).success,true);
+const clash={...normal,fixedStart:720,minutes:30};prop=propose(target,routine(defaults),defaults,[clash],{...freshDraft(),selectedIds:[clash.id]});assert.ok(prop.conflicts.length>0);
+const fixedNow=Date.parse('2026-09-07T15:05:00Z');const existing=routine(defaults);existing.blocks.push({id:'manual-appointment',title:'已预约电话',category:'work',start:780,end:800,note:'',done:false});existing.blocks.sort((a,b)=>a.start-b.start);existing.logs=[{id:'old-log',blockId:existing.blocks[0].id,title:'起床',category:'life',start:Date.parse('2026-09-07T11:30:00Z'),end:Date.parse('2026-09-07T11:35:00Z')}];
+prop=propose('2026-09-07',existing,defaults,[normal],{...freshDraft(),selectedIds:[normal.id]},fixedNow);assert.deepEqual(prop.day.logs,existing.logs);for(const b of existing.blocks.filter(b=>b.start<665))assert.deepEqual(prop.day.blocks.find(x=>x.id===b.id),b);assert.equal(prop.day.blocks.some(b=>b.id==='manual-appointment'),true);
+assert.equal(settingsSchema.safeParse({...defaults,breakfast:400}).success,false);
+console.log('PASS: natural-text extraction, protected anchors, buffers, unscheduled backlog, fixed conflicts, saved draft without application, explicit apply, stale proposals, settings, manual commitments, preserved history');
+const {extractMinutes}=await import('../../lib/planning');assert.equal(extractMinutes('一个半小时'),90);
+const trip={...normal,id:'shopping-trip',title:'买菜',category:'meal' as const,minutes:60};const tripPlan=propose(target,routine(defaults),defaults,[trip],{...freshDraft(),selectedIds:[trip.id]});const tripBlocks=tripPlan.day.blocks.filter(b=>b.taskId===trip.id);assert.equal(tripBlocks.length,1);assert.equal(tripBlocks[0].end-tripBlocks[0].start,60);
+console.log('PASS: contiguous errands and Chinese half-hour durations');
+
+// V2: focus should move forward; review groups split work without losing removed tasks.
+const {suggestedBlock,planChanges}=await import('../../lib/planner-view');
+const focusDay=template();focusDay.blocks[3].done=true;
+assert.equal(suggestedBlock(focusDay,700,true,'')!.id,focusDay.blocks[4].id);
+assert.equal(suggestedBlock(focusDay,1920,true,''),undefined);
+assert.equal(suggestedBlock(focusDay,700,true,focusDay.blocks[0].id)!.id,focusDay.blocks[0].id);
+assert.equal(suggestedBlock(focusDay,700,true,'',focusDay.blocks[3].id)!.id,focusDay.blocks[3].id);
+const first={id:'segment-a',taskId:'project',title:'网站原型',category:'work' as const,start:510,end:550,note:'',done:false};
+const second={...first,id:'segment-b',start:555,end:595};
+const before={mode:'custom' as const,goal:'',logs:[],blocks:[first,second]};
+const after={...before,blocks:[{...first,id:'new-a',start:600,end:640},{...second,id:'new-b',start:645,end:685}]};
+assert.equal(planChanges(before,after).length,1);assert.equal(planChanges(before,after)[0].kind,'changed');assert.equal(planChanges(before,after)[0].before.length,2);
+assert.equal(planChanges(before,{...before,blocks:[]})[0].kind,'removed');
+assert.deepEqual(planChanges(before,{...before,blocks:before.blocks.map(b=>({...b,id:b.id+'-new'}))}),[]);
+const delayed=propose('2026-09-07',routine(defaults),defaults,[normal],{...freshDraft(),selectedIds:[normal.id],delay:15},Date.parse('2026-09-07T14:00:00Z'));
+assert.equal(delayed.from,620);assert.ok(delayed.day.blocks.filter(b=>b.taskId===normal.id).every(b=>b.start>=620));
+for(const b of fixedRoutine(defaults).filter(b=>b.locked))assert.equal(delayed.day.blocks.find(x=>x.id===b.id)!.start,b.start);
+const beforeDraft=await read();const appliedDay=structuredClone(beforeDraft.days[target]);
+r=await api('draft',beforeDraft.revision,{input:'还没整理好的想法',stage:'capture',delay:15});assert.equal(r.status,200);
+const reloadedDraft=await read();assert.equal(reloadedDraft.draft.input,'还没整理好的想法');assert.equal(reloadedDraft.draft.delay,15);assert.deepEqual(reloadedDraft.days[target],appliedDay);
+r=await api('draft',reloadedDraft.revision,{delay:-15});assert.equal(r.status,400);
+let undoState=await state();const oldLogs=structuredClone(undoState.days['2026-09-06'].logs);
+for(const done of [true,false]){const changed=structuredClone(undoState.days['2026-09-06']);changed.blocks[3].done=done;r=await PUT(request('PUT','alex',{date:'2026-09-06',revision:undoState.revision,active:null,days:{'2026-09-06':changed}}));assert.equal(r.status,200);undoState=await state();assert.equal(undoState.days['2026-09-06'].blocks[3].done,done);assert.deepEqual(undoState.days['2026-09-06'].logs,oldLogs)}
+console.log('PASS: forward focus, grouped replan differences, removed tasks, delayed scheduling with protected meals, resumable drafts, undo without deleting actual logs');
+
+await import('./focus-check');
+await import('./recovery-check');
+await import('./overview-check');
