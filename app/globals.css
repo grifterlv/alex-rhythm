@@ -283,3 +283,17 @@ body:has(.recovery-dialog) [data-slot=dialog-overlay]{z-index:80}
 @media(max-width:760px){.topbar{padding:8px 16px;min-height:60px}.topbar .breadcrumb{flex:1 1 130px}.topbar-actions{gap:6px;flex:0 1 auto}.topbar .sync-state{display:none}.language-picker select{width:120px}.language-storage-note{max-width:180px}.section-toolbar .view-tabs{width:100%}.view-tabs button{font-size:.875rem;padding:8px 6px;gap:4px}.focus-space-header .language-picker select{width:115px}.focus-space-header .focus-wordmark{display:none}.focus-space-header .language-control{margin-left:auto}.agenda-tools{flex-wrap:wrap;gap:8px}.agenda-tools>div{flex-wrap:wrap}.date-nav{flex-wrap:wrap}.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card>strong{overflow-wrap:anywhere}.overview-group-copy{min-width:0}}
 
 .breadcrumb{white-space:normal;min-width:0}.language-picker [data-slot=native-select-wrapper]{flex-shrink:0}
+
+/* Unscheduled intervals keep the duration scale and expose an always-visible action. */
+.overview-gap-action{width:100%;text-align:left;flex-wrap:wrap;column-gap:12px;row-gap:8px;cursor:pointer;transition:background-color .15s,border-color .15s}
+.overview-gap-action .overview-gap-copy{flex:1 1 10rem;min-width:0;display:flex;flex-direction:column;gap:2px}
+.overview-gap-copy strong{font-size:.9375rem;font-weight:600;line-height:1.5}
+.overview-gap-copy>span{font-size:.8125rem;line-height:1.6;font-variant-numeric:tabular-nums}
+.overview-gap-action .overview-gap-add{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:4px 8px;border:1px solid #d8e2cf;border-radius:6px;background:#f1f5eb;font-size:.8125rem;font-weight:600;line-height:1.5}
+.overview-gap-add svg{flex-shrink:0}
+.overview-gap-action:hover:not(:disabled){background:#f1f6eb;border-color:#8ea17e}
+.overview-gap-action:focus-visible{outline:3px solid #70835f;outline-offset:3px}
+.overview-gap-action:disabled{cursor:wait;opacity:.65}
+.overview-night-items .overview-gap-action{flex:1 1 19rem;align-items:flex-start;min-width:0;gap:8px 12px;border-style:dashed}
+.overview-night-items .overview-gap-copy strong{font-weight:600}
+@media(prefers-reduced-motion:reduce){.overview-gap-action{transition:none}}

@@ -18,7 +18,7 @@ function groupTitle(blocks:Block[]){
 // Presentation only: clip across period boundaries, preserve source IDs, and include every gap.
 export function overviewGroups(day:Day,start:number,end:number):OverviewGroup[]{
  const out:OverviewGroup[]=[];let cursor=start;
- const gap=(a:number,b:number)=>{if(b>a)out.push({id:`gap-${a}-${b}`,start:a,end:b,category:null,title:'留白',blocks:[]})};
+ const gap=(a:number,b:number)=>{if(b>a)out.push({id:`gap-${a}-${b}`,start:a,end:b,category:null,title:'未安排',blocks:[]})};
  for(const block of [...day.blocks].sort((a,b)=>a.start-b.start)){
   if(block.end<=start||block.start>=end)continue;
   const a=Math.max(start,block.start),b=Math.min(end,block.end);gap(cursor,a);

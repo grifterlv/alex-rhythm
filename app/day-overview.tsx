@@ -1,15 +1,16 @@
 'use client';
 import {useLanguage} from './language-provider';
 import {useEffect,useMemo,useState,type CSSProperties} from 'react';
-import {ArrowRight,BookOpen,Cat,Check,Clock3,CookingPot,Dumbbell,Focus,Laptop,Leaf,Moon,Pause,RotateCcw,Sun,Sunrise,Sunset} from 'lucide-react';
+import {ArrowRight,BookOpen,Cat,Check,Clock3,CookingPot,Dumbbell,Focus,Laptop,Leaf,Moon,Pause,Plus,RotateCcw,Sun,Sunrise,Sunset} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {NativeSelect} from '@/components/ui/native-select';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from './localized-dialog';
 import {elapsed,hm,type Active,type Block,type Day} from '@/lib/planner';
 import type {Settings} from '@/lib/planning';
 import {dayOverview,overviewGroupAt,type OverviewGroup} from '@/lib/day-overview';
+import type {TimeRange} from '@/lib/block-editor';
 
-type Props={day:Day,date:string,settings:Settings,active:Active,now:number,minute:number,isToday:boolean,busy:boolean,current?:Block,nextStep:string,getNextStep:(b:Block)=>string,onFocus:()=>void,onPause:()=>void,onRecover:()=>void,onReview:()=>void,reviewDue:boolean,onDetails:(id?:string)=>void,onPlan:()=>void,canPlan:boolean};
+type Props={day:Day,date:string,settings:Settings,active:Active,now:number,minute:number,isToday:boolean,busy:boolean,current?:Block,nextStep:string,getNextStep:(b:Block)=>string,onFocus:()=>void,onPause:()=>void,onRecover:()=>void,onReview:()=>void,reviewDue:boolean,onDetails:(id?:string)=>void,onPlan:()=>void,canPlan:boolean,onAddInGap:(range:TimeRange)=>void};
 const icons={morning:Sunrise,afternoon:Sun,evening:Sunset,night:Moon};
 const activityIcons={work:Laptop,meal:CookingPot,move:Dumbbell,cat:Cat,life:Sun,rest:BookOpen};
 const periodArt:Record<string,string>={morning:'morning',afternoon:'afternoon',evening:'evening'};
@@ -36,12 +37,12 @@ export default function DayOverview(p:Props){
   </section>
   <section className="overview-rhythm" aria-label={tr("清醒时间的计划分布")}>
    <div className="overview-section-heading"><div><h2>{tr("一天的节奏")}</h2><p>{tr("色块长度代表计划时长")}</p></div><span>{completion} / {p.day.blocks.length}{tr(" 项已完成")}</span></div>
-   <div className="overview-time-map" role="img" aria-label={tr("清醒时间 {0} 至 {1}。{2}；留白 {3}。", [hm(start), hm(end), planned.map(x=>categories[x.category].label+' '+duration(x.minutes)).join('；'), duration(free)])}>
+   <div className="overview-time-map" role="img" aria-label={tr("清醒时间 {0} 至 {1}。{2}；未安排 {3}。", [hm(start), hm(end), planned.map(x=>categories[x.category].label+' '+duration(x.minutes)).join('；'), duration(free)])}>
     {groups.map(g=><span key={g.id} className={'overview-map-segment '+(!g.category?'is-free':'')} style={{left:(g.start-start)/span*100+'%',width:(g.end-g.start)/span*100+'%',background:g.category?categories[g.category].color:undefined}}/>)}
     {p.isToday&&p.minute>=start&&p.minute<end&&<span className="overview-now-line" style={{left:(p.minute-start)/span*100+'%'}}/>}
    </div>
    <div className="overview-map-scale"><span>{hm(start)}{tr(" 起床")}</span><span>{hm(end)}{tr(" 睡前")}</span></div>
-   <div className="overview-legend">{planned.map(x=><span key={x.category}><i style={{background:categories[x.category].color}}/>{categories[x.category].label}<b>{duration(x.minutes)}</b></span>)}<span><i className="free-key"/>{tr("留白")}<b>{duration(free)}</b></span>{p.isToday&&p.minute>=start&&p.minute<end&&<span className="now-key"><i/>{tr("现在 ")}{hm(p.minute)}</span>}</div>
+   <div className="overview-legend">{planned.map(x=><span key={x.category}><i style={{background:categories[x.category].color}}/>{categories[x.category].label}<b>{duration(x.minutes)}</b></span>)}<span><i className="free-key"/>{tr("未安排")}<b>{duration(free)}</b></span>{p.isToday&&p.minute>=start&&p.minute<end&&<span className="now-key"><i/>{tr("现在 ")}{hm(p.minute)}</span>}</div>
   </section>
   <div className="overview-period-heading"><div><h2>{tr("把一天分成三段")}</h2><p>{tr("时间越长，色块越高 · 短任务保留可读高度")}</p></div><Button variant="ghost" disabled={p.busy} onClick={()=>p.onDetails()}>{tr("详细日程")}<ArrowRight size={16}/></Button></div>
   <label className="overview-period-picker"><span>{tr("查看时段")}</span><NativeSelect value={mobilePeriod} onChange={e=>setMobilePeriod(e.target.value)}>{daytime.map(x=><option key={x.id} value={x.id}>{tr(x.title)} · {hm(x.start)}–{hm(x.end)}</option>)}{night&&<option value="night">{tr("夜间 · ")}{hm(night.start)}{tr(" 之后")}</option>}</NativeSelect></label>
@@ -51,9 +52,17 @@ export default function DayOverview(p:Props){
    <div className="overview-period-track" aria-hidden="true">{period.groups.map(g=><span key={g.id} style={{width:(g.end-g.start)/(period.end-period.start)*100+'%',background:g.category?categories[g.category].color:'#e8ece4'}}/>)}</div>
    <div className="overview-groups">{period.groups.map(g=>{const running=p.active?.day===p.date&&g.blocks.some(b=>b.id===p.active!.blockId),at=p.isToday&&overviewGroupAt(g,p.minute),done=!!g.blocks.length&&g.blocks.every(b=>b.done),ActivityIcon=g.category?activityIcons[g.category]:Leaf,groupHeight=(g.end-g.start)/6+'rem';return g.category?<button key={g.id} className={'overview-group '+(running?'is-running ':'')+(at?'is-now ':'')+(done?'is-done':'')} style={{'--group-height':groupHeight,'--group-color':categories[g.category].color,'--group-pale':categories[g.category].pale} as CSSProperties} onClick={()=>choose(g)} aria-label={tr("{0} 至 {1}，{2}，{3}，{4}查看详情", [timeLabel(g.start), timeLabel(g.end), groupTitle(g), duration(g.end-g.start), running?tr('计时中，'):done?tr('已完成，'):''])}>
     <span className="overview-group-time"><span className="overview-activity-icon" aria-hidden="true"><ActivityIcon size={21}/>{done&&<span className="overview-activity-done"><Check size={10}/></span>}</span>{hm(g.start)}</span><span className="overview-group-copy"><strong>{groupTitle(g)}</strong><span>{running?<b>{tr("计时中 · ")}</b>:at?<b>{tr("计划此刻 · ")}</b>:null}{duration(g.end-g.start)}{g.blocks.length>1?' · '+g.blocks.length+tr(" 个步骤"):''}</span></span><ArrowRight size={14}/>
-   </button>:<div className={'overview-gap '+(at?'is-now':'')} key={g.id} style={{'--group-height':groupHeight} as CSSProperties}><Leaf size={15}/><span>{hm(g.start)}{tr(" · 留白 ")}{duration(g.end-g.start)}</span>{at&&<small>{tr("现在")}</small>}</div>})}</div>
+   </button>:<GapButton key={g.id} group={g} current={at} busy={p.busy} onAdd={p.onAddInGap}/>})}</div>
   </section>})}</div>
-  {night&&<section className={'overview-night '+(mobilePeriod==='night'?'mobile-visible':'')}><div><Moon size={21}/><h3>{tr("夜间")}</h3><span>{timeLabel(night.start)}–{timeLabel(night.end)}</span></div><div className="overview-night-items">{night.groups.map(g=>g.category?<button key={g.id} onClick={()=>choose(g)}><span>{groupTitle(g)}</span><strong>{duration(g.end-g.start)}</strong><ArrowRight size={15}/></button>:<span className="overview-night-gap" key={g.id}>{tr("留白 ")}{duration(g.end-g.start)}</span>)}</div></section>}
+  {night&&<section className={'overview-night '+(mobilePeriod==='night'?'mobile-visible':'')}><div><Moon size={21}/><h3>{tr("夜间")}</h3><span>{timeLabel(night.start)}–{timeLabel(night.end)}</span></div><div className="overview-night-items">{night.groups.map(g=>g.category?<button key={g.id} onClick={()=>choose(g)}><span>{groupTitle(g)}</span><strong>{duration(g.end-g.start)}</strong><ArrowRight size={15}/></button>:<GapButton compact key={g.id} group={g} current={p.isToday&&overviewGroupAt(g,p.minute)} busy={p.busy} onAdd={p.onAddInGap}/>)}</div></section>}
   <Dialog open={!!selected} onOpenChange={v=>!v&&setSelectedId(null)}><DialogContent className="overview-detail-dialog"><DialogHeader><DialogTitle>{groupTitle(selected)}</DialogTitle><DialogDescription>{selected&&tr("{0}–{1} · 计划 {2}", [timeLabel(selected.start), timeLabel(selected.end), duration(selected.end-selected.start)])}</DialogDescription></DialogHeader><div className="overview-detail-list">{selected?.blocks.map(b=><article key={b.id}><span>{timeLabel(b.start)}–{timeLabel(b.end)}</span><h3>{blockTitle(b)}</h3>{p.getNextStep(b)&&<p>{tr("下一步：")}{p.getNextStep(b)}</p>}{b.note&&<p>{blockNote(b)}</p>}<Button variant="outline" disabled={p.busy} onClick={()=>{setSelectedId(null);p.onDetails(b.id)}}>{tr("在详细日程中打开")}<ArrowRight size={16}/></Button></article>)}</div></DialogContent></Dialog>
  </div>;
+}
+
+function GapButton({group,current,busy,compact=false,onAdd}:{group:OverviewGroup,current:boolean,busy:boolean,compact?:boolean,onAdd:(range:TimeRange)=>void}){
+ const {tr,duration,timeLabel}=useLanguage();
+ return <button type="button" className={'overview-gap overview-gap-action '+(current?'is-now ':'')+(compact?'overview-night-gap':'')} style={compact?undefined:{'--group-height':(group.end-group.start)/6+'rem'} as CSSProperties} disabled={busy} onClick={()=>onAdd({start:group.start,end:group.end})} aria-label={tr('在 {0}–{1} 的未安排时间添加任务',[timeLabel(group.start),timeLabel(group.end)])}>
+  <span className="overview-gap-copy"><strong>{tr('未安排')} · {duration(group.end-group.start)}</strong><span>{timeLabel(group.start)}–{timeLabel(group.end)}{current?' · '+tr('现在'):''}</span></span>
+  <span className="overview-gap-add"><Plus size={17} aria-hidden="true"/>{tr('添加任务')}</span>
+ </button>;
 }

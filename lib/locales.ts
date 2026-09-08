@@ -2360,6 +2360,22 @@ export const messages: Record<string, readonly [string, string]> = {
     "Check your input and try again.",
     "Revisa los datos e inténtalo de nuevo."
   ],
+  "未安排": [
+    "Unscheduled",
+    "Sin programar"
+  ],
+  "在 {0}–{1} 的未安排时间添加任务": [
+    "Add a task in the unscheduled time from {0} to {1}",
+    "Añadir una tarea en el tiempo sin programar de {0} a {1}"
+  ],
+  "清醒时间 {0} 至 {1}。{2}；未安排 {3}。": [
+    "Waking hours {0} to {1}. {2}; unscheduled {3}.",
+    "Horas despiertas de {0} a {1}. {2}; sin programar {3}."
+  ],
+  "这段空档已经变化，请重新选择。": [
+    "This free time has changed. Choose it again.",
+    "Este espacio ha cambiado. Vuelve a seleccionarlo."
+  ],
   "网络连接失败，请重试。": [
     "Connection failed. Please try again.",
     "Falló la conexión. Inténtalo de nuevo."

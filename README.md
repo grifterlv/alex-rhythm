@@ -87,3 +87,7 @@ Use the language picker in the top bar or focus space to switch between English,
 Navigation, planning dialogs, focus controls, routine labels and notes, dates, duration labels, validation messages, and CSV headers follow the selected language. Custom task titles and notes remain in their original language. Display translations do not rewrite stored plans, active timer timestamps, task IDs, or drafts. Planning capture recognizes common English and Spanish durations and appointment times in addition to Chinese; extracted details remain editable and require confirmation.
 
 `lib/i18n.ts` and `lib/locales.ts` define the presentation helpers and message catalog. `app/language-provider.tsx` owns the device-local preference; no database migration is required. Language tests cover catalog placeholders, default routines, preserved custom content and timer state, and multilingual planning input. Browser interaction and visual QA have not been performed for this iteration.
+
+### Add directly to unscheduled time
+
+Unscheduled gaps in the overview display their full time range and an Add task action in all three interface languages. Click anywhere in a gap to open the existing editor with its start and end prefilled. Nothing changes until Save; scheduling only part of a gap leaves the rest available. Gaps crossing period boundaries use the selected visible range, and unchanged overnight times retain their day offset. Existing overlap validation and revision checks protect saved plans. No database or timer changes are required.
