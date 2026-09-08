@@ -96,9 +96,9 @@ Unscheduled gaps in the overview display their full time range and an Add task a
 
 Overview tabs keep labels on one line. On narrow screens the tab strip scrolls horizontally, while the selected tab remains keyboard-accessible and the rest of the page keeps its width. The planner and focus headers share fixed language and connection-status columns so translations and saving states do not move the language picker. Mobile layouts keep a consistent picker width and omit tab icons to make room for labels. Status icons reserve the same space while loading or connected.
 
-### Document-style workspace and interactive studio scenes
+### Interactive studio scenes and motion controls
 
-The interface uses a white document surface, a light gray sidebar, fine separators, compact controls, restrained category colors and shorter illustrated covers. Proportional time blocks and fixed language/status columns retain their sizing behavior. The overview now shows a completion bar and offers completion/undo directly inside each task detail, through the existing persistence path.
+The interface retains its original green palette, rounded cards, spacing and full-size illustrated covers. Proportional time blocks and fixed language/status columns retain their sizing behavior. The overview shows a completion bar and offers completion/undo directly inside each task detail, through the existing persistence path. Interaction styles are separate from the main theme so scene controls and motion preferences work without a visual redesign.
 
 The six procedural Three.js rooms use smoother rounded geometry, matte clay colors, warm/cool studio lighting, subtle breathing and blinking. These are browser-rendered scenes inspired by stylized 3D illustration; they are not Blender files or offline Blender renders. Drag a scene to change its view, or use the labeled rotation, zoom and reset buttons. Touch dragging preserves vertical page scrolling. Camera bounds keep the room facing forward; view changes are independent of tracked time.
 

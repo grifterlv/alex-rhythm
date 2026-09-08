@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "./notion-theme.css";
+import "./interactions.css";
 import {MotionProvider} from './motion-preferences';
 import {LanguageProvider} from './language-provider';
 
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className="antialiased notion-theme"><LanguageProvider><MotionProvider>{children}</MotionProvider></LanguageProvider></body>
+      <body className="antialiased"><LanguageProvider><MotionProvider>{children}</MotionProvider></LanguageProvider></body>
     </html>
   );
 }
