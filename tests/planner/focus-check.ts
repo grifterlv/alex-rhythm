@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {focusElapsed,focusRecord,focusScenes,sceneForActivity,shouldAnimate,type FocusScene} from '../../lib/focus';
 import {createFocusWorld} from '../../lib/focus-world';
+import {changeFocusView,initialFocusView} from '../../lib/focus-camera';
 import {type Snapshot,type Block} from '../../lib/planner';
 
 const a:Block={id:'work-a',title:'完成网站原型',category:'work',start:510,end:550,done:false,note:''};
@@ -19,6 +20,13 @@ const pinned=focusRecord(paused,{date:'2026-09-07',id:a.id});assert.equal(pinned
 paused.days['2026-09-07'].blocks[0].done=true;assert.equal(focusRecord(paused,{date:'2026-09-07',id:a.id}).done,true);
 assert.equal(sceneForActivity(a),'desk');assert.equal(sceneForActivity(b),'reading');assert.equal(sceneForActivity({...a,title:'睡眠',category:'rest'}),'rest');assert.equal(sceneForActivity({...a,title:'陪猫玩',category:'cat'}),'cats');
 assert.equal(shouldAnimate(true,true,true,false),true);assert.equal(shouldAnimate(false,true,true,false),false);assert.equal(shouldAnimate(true,false,true,false),false);assert.equal(shouldAnimate(true,true,false,false),false);assert.equal(shouldAnimate(true,true,true,true),false);
+// Drag and accessible controls share bounded views; they never alter a task or timer.
+const viewBefore={...initialFocusView};
+assert.deepEqual(changeFocusView(initialFocusView,{yaw:100,elevation:100,zoom:100}),{yaw:1.3,elevation:.86,zoom:1.18});
+assert.deepEqual(changeFocusView(initialFocusView,{yaw:-100,elevation:-100,zoom:-100}),{yaw:.2,elevation:.28,zoom:.82});
+assert.deepEqual(changeFocusView(initialFocusView,{yaw:NaN,elevation:Infinity,zoom:-Infinity}),initialFocusView);
+assert.deepEqual(initialFocusView,viewBefore);
+assert.equal(changeFocusView(initialFocusView,{zoom:.09}).yaw,initialFocusView.yaw);
 // CPU geometry check only: no browser, GPU, screenshots, or visual testing.
 for(const kind of Object.keys(focusScenes) as FocusScene[]){
  const world=createFocusWorld(kind);let meshes=0;const geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>();

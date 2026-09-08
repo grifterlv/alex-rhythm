@@ -2376,6 +2376,17 @@ export const messages: Record<string, readonly [string, string]> = {
     "This free time has changed. Choose it again.",
     "Este espacio ha cambiado. Vuelve a seleccionarlo."
   ],
+  "动态效果": ["Motion", "Animaciones"],
+  "关闭动态效果": ["Turn off motion", "Desactivar animaciones"],
+  "开启动效": ["Turn on motion", "Activar animaciones"],
+  "完成进度": ["Completion progress", "Progreso de tareas"],
+  "拖动查看场景": ["Drag to explore", "Arrastra para explorar"],
+  "场景视角": ["Scene view", "Vista de la escena"],
+  "向左旋转": ["Rotate left", "Girar a la izquierda"],
+  "向右旋转": ["Rotate right", "Girar a la derecha"],
+  "拉近": ["Zoom in", "Acercar"],
+  "拉远": ["Zoom out", "Alejar"],
+  "重置视角": ["Reset view", "Restablecer vista"],
   "网络连接失败，请重试。": [
     "Connection failed. Please try again.",
     "Falló la conexión. Inténtalo de nuevo."

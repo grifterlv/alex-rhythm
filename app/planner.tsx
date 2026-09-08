@@ -4,6 +4,7 @@ import PlanningWorkspace,{type WorkspaceMode} from './planning-workspace';
 import NowPanel,{type ReplanIntent} from './now-panel';
 import FocusMode from './focus-mode';
 import DayOverview from './day-overview';
+import {MotionToggle,useMotionPreferences} from './motion-preferences';
 import {draftInGap,editedBlockTimes,type TimeRange} from '@/lib/block-editor';
 import {NextStepDialog,TimerReviewDialog,type MemoTarget,type ReviewTarget} from './recovery-controls';
 import {nextStepFor,reviewDue,type TimerReview} from '@/lib/recovery';
@@ -26,6 +27,8 @@ function Field({label,children}:{label:string,children:React.ReactNode}){
 
 return <label className="field"><span>{label}</span>{children}</label>}
 export default function Planner(){
+ const {enabled:motionEnabled,reduced:reducedMotion}=useMotionPreferences();
+ const scrollBehavior:ScrollBehavior=motionEnabled&&!reducedMotion?'smooth':'auto';
  const {tr,locale,duration,categories,blockTitle,blockNote,recordTitle,dateLabel}=useLanguage();
 
  const [memoTarget,setMemoTarget]=useState<MemoTarget|null>(null),[reviewTarget,setReviewTarget]=useState<ReviewTarget|null>(null);
@@ -112,7 +115,7 @@ export default function Planner(){
  }
  function openPlan(d:string,nextIntent:ReplanIntent=null){if(d!==date)setLoading(true);setIntent(nextIntent);setDate(d);if(view==='review')setView('overview');setWorkspace('plan')}
  function navigate(d:string){if(!busy){if(d!==date)setLoading(true);setDate(d);setUndo(null);setSelected('');setBlockDraft(null);setLogDraft(null);setError('')}}
- function scrollNow(){setView('today');setAgendaOpen(true);setSelected(current?.id??'');setTimeout(()=>document.getElementById('block-'+current?.id)?.scrollIntoView({behavior:'smooth',block:'center'}),50)}
+ function scrollNow(){setView('today');setAgendaOpen(true);setSelected(current?.id??'');setTimeout(()=>document.getElementById('block-'+current?.id)?.scrollIntoView({behavior:scrollBehavior,block:'center'}),50)}
  const refreshRef=useRef<()=>void>(()=>{}),refreshInFlight=useRef(false);
  const syncGate=useRef({revision:0,date:'',blocked:true});
  syncGate.current={revision:data.revision,date,blocked:loading||!!workspace||!!blockDraft||!!logDraft||!!memoTarget||!!reviewTarget||goal!==day.goal};
@@ -122,7 +125,7 @@ export default function Planner(){
   void fetch('/api/planner?date='+date,{cache:'no-store'}).then(async r=>{const state=await r.json();if(!r.ok)throw new Error(state.error);const gate=syncGate.current;if(requestId!==loadId.current||lock.current||gate.blocked||gate.date!==date||gate.revision!==revision)return;setData(state);setGoal((state.days[date]??routine(state.settings??defaults)).goal);if(state.revision!==revision)setUndo(null);setOnline(true)}).catch(()=>setOnline(false)).finally(()=>{refreshInFlight.current=false;setSyncing(false)});
  };
  useEffect(()=>{const refresh=()=>refreshRef.current();const offline=()=>setOnline(false);const reconnect=()=>{setOnline(true);refresh()};setOnline(navigator.onLine);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);window.addEventListener('online',reconnect);window.addEventListener('offline',offline);const timer=setInterval(refresh,30000);return()=>{clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',reconnect);window.removeEventListener('offline',offline)}},[]);
- function jump(section:'now'|'agenda'|'review'|'overview'){setView(section==='review'?'review':section==='overview'?'overview':'today');if(section==='agenda')setAgendaOpen(true);setTimeout(()=>{const el=document.getElementById(section==='now'?'now-panel':section==='overview'?'overview-current':'day-workspace');el?.scrollIntoView({behavior:'smooth',block:'start'});el?.focus({preventScroll:true})},60)}
+ function jump(section:'now'|'agenda'|'review'|'overview'){setView(section==='review'?'review':section==='overview'?'overview':'today');if(section==='agenda')setAgendaOpen(true);setTimeout(()=>{const el=document.getElementById(section==='now'?'now-panel':section==='overview'?'overview-current':'day-workspace');el?.scrollIntoView({behavior:scrollBehavior,block:'start'});el?.focus({preventScroll:true})},60)}
  function exportRecords(){const rows=[[tr("日期"),tr("活动"),tr("分类"),tr("开始（多伦多）"),tr("结束（多伦多）"),tr("分钟")],...day.logs.map(l=>[date,recordTitle(l),categories[l.category].label,new Date(l.start).toLocaleString(locale,{timeZone:'America/Toronto'}),new Date(l.end).toLocaleString(locale,{timeZone:'America/Toronto'}),((l.end-l.start)/60000).toFixed(1)])];const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`alex-${date}.csv`;a.click();URL.revokeObjectURL(url)}
  return <div className={'app-shell '+(view==='review'?'review-mode':view==='overview'?'overview-mode':'today-mode')}>
   <aside className="sidebar">
@@ -137,7 +140,7 @@ export default function Planner(){
   <main className="main-shell">
    <header className="topbar"><span className="breadcrumb">{tr("我的空间 ")}<ChevronRight size={14}/> {view==='overview'?tr("一日总览"):view==='today'?tr("详细日程"):tr("时间回顾")}</span><div className="topbar-actions header-controls"><LanguagePicker/><span className="sync-state" role="status" aria-atomic="true"><span className="sync-indicator" aria-hidden="true">{busy?<Loader2 size={14} className="spin"/>:<span className="status-dot"/>}</span><span>{!online?tr("连接中断"):busy?tr("正在保存"):loading?tr("正在载入"):syncing?tr("正在同步"):tr("已连接 · 私人日程")}</span></span></div></header>
    <div className="page-wrap">
-    <div className="page-heading"><div><p className="eyebrow">{tr("Alex 的一天")}</p><h1>{view==='overview'?tr("一眼看清这一天"):view==='today'?tr("详细日程"):tr("时间回顾")}</h1></div><div className="date-nav"><Button variant="ghost" size="icon" aria-label={tr("前一天")} disabled={busy||loading} onClick={()=>navigate(shiftDate(date,-1))}><ChevronLeft/></Button><label className="date-picker"><CalendarDays size={17}/><input aria-label={tr("选择日期")} type="date" value={date} disabled={busy||loading} onChange={e=>e.target.value&&navigate(e.target.value)}/></label><Button variant="ghost" size="icon" aria-label={tr("后一天")} disabled={busy||loading} onClick={()=>navigate(shiftDate(date,1))}><ChevronRight/></Button><Button variant="outline" disabled={busy||loading} onClick={()=>navigate(time.planDate)}>{tr("今天")}</Button></div></div>
+    <div className="page-heading"><div><p className="eyebrow">{tr("Alex 的一天")}</p><h1>{view==='overview'?tr("一眼看清这一天"):view==='today'?tr("详细日程"):tr("时间回顾")}</h1></div><div className="page-heading-controls"><MotionToggle/><div className="date-nav"><Button variant="ghost" size="icon" aria-label={tr("前一天")} disabled={busy||loading} onClick={()=>navigate(shiftDate(date,-1))}><ChevronLeft/></Button><label className="date-picker"><CalendarDays size={17}/><input aria-label={tr("选择日期")} type="date" value={date} disabled={busy||loading} onChange={e=>e.target.value&&navigate(e.target.value)}/></label><Button variant="ghost" size="icon" aria-label={tr("后一天")} disabled={busy||loading} onClick={()=>navigate(shiftDate(date,1))}><ChevronRight/></Button><Button variant="outline" disabled={busy||loading} onClick={()=>navigate(time.planDate)}>{tr("今天")}</Button></div></div></div>
     {!online&&<div className="error-banner" role="status">{tr("暂时无法同步。恢复连接后会重试；保存失败时请保留页面。")}</div>}
     {error&&<div className="error-banner" role="alert"><span>{tr(error)}</span><Button variant="outline" size="sm" onClick={()=>load(date)} disabled={busy}>{tr("重新载入")}</Button></div>}
     {message&&<div className="save-message" role="status"><Check size={16}/><span>{tr(message)}</span>{undo&&<Button variant="ghost" disabled={busy} onClick={undoCompletion}>{tr("撤销")}</Button>}</div>}
@@ -147,7 +150,7 @@ export default function Planner(){
 
       <Tabs value={view} onValueChange={setView}>
        <div className="section-toolbar"><div className="view-tabs-viewport"><TabsList className="view-tabs" aria-label={tr("我的一天")}><TabsTrigger value="overview"><LayoutDashboard/>{tr("一日总览")}</TabsTrigger><TabsTrigger value="today"><CalendarDays/>{tr("详细日程")}</TabsTrigger><TabsTrigger value="review"><TrendingUp/>{tr("回顾")}</TabsTrigger></TabsList></div><span className="day-label">{date&&dateLabel(date)}</span></div>
-       <TabsContent value="overview"><DayOverview onAddInGap={addInGap} day={day} date={date} settings={settings} active={active} now={now} minute={time.planMinute} isToday={isToday} busy={busy} current={overviewCurrent} nextStep={nextStepFor(data,active?activeBlock:overviewCurrent)} getNextStep={b=>nextStepFor(data,b)} onPause={pauseForUser} onRecover={recover} onReview={()=>checkTimer()} reviewDue={reviewDue(active,now)} onFocus={openFocus} onPlan={()=>openPlan(date)} canPlan={date>=time.planDate} onDetails={id=>{setView('today');setAgendaOpen(true);if(id)setSelected(id);setTimeout(()=>document.getElementById(id?'block-'+id:'day-workspace')?.scrollIntoView({behavior:'smooth',block:'start'}),60)}}/></TabsContent>
+       <TabsContent value="overview"><DayOverview onToggleComplete={b=>finish(b)} onAddInGap={addInGap} day={day} date={date} settings={settings} active={active} now={now} minute={time.planMinute} isToday={isToday} busy={busy} current={overviewCurrent} nextStep={nextStepFor(data,active?activeBlock:overviewCurrent)} getNextStep={b=>nextStepFor(data,b)} onPause={pauseForUser} onRecover={recover} onReview={()=>checkTimer()} reviewDue={reviewDue(active,now)} onFocus={openFocus} onPlan={()=>openPlan(date)} canPlan={date>=time.planDate} onDetails={id=>{setView('today');setAgendaOpen(true);if(id)setSelected(id);setTimeout(()=>document.getElementById(id?'block-'+id:'day-workspace')?.scrollIntoView({behavior:scrollBehavior,block:'start'}),60)}}/></TabsContent>
        <TabsContent value="today">
         <section className={"agenda-panel "+(agendaOpen?"agenda-expanded":"")}>
          <div className="agenda-heading"><div><h2>{tr("全天安排")}</h2><p>{completed}{tr(" 项已完成 · 点击任务查看或记录")}</p></div><Button variant="outline" size="sm" onClick={()=>openPlan(date)} disabled={busy||date<time.planDate}><SlidersHorizontal/>{tr("规划这一天")}</Button></div>

@@ -4,7 +4,7 @@ import type {FocusScene} from './focus';
 
 type Point=[number,number,number];
 type Gesture='type'|'read'|'cycle'|'cook'|'cats'|'rest';
-const palette={wall:0xe7eee7,floor:0xe9d4b7,wood:0xb8885c,cream:0xfff8e9,green:0x47785f,leaf:0x739775,clay:0xc77960,ink:0x354740,skin:0xe7b991,hair:0x443b35,blue:0x87b9c2,pants:0x52677a};
+const palette={wall:0xf0e9e4,floor:0xe6d9ca,wood:0xc6a487,cream:0xfff9f1,green:0x839e93,leaf:0xaac0a2,clay:0xd4a5a0,ink:0x57505b,skin:0xefc4a7,hair:0x67544e,blue:0xa5bfd5,pants:0x8d93ac};
 
 // Actual 3D geometry: each room has articulated activity-specific motion.
 // Geometry and materials belong to this world and are disposed together.
@@ -13,10 +13,10 @@ export function createFocusWorld(kind:FocusScene){
  const materials=new Map<number,THREE.MeshStandardMaterial>();
  const geometries=new Set<THREE.BufferGeometry>();
  const animations:Array<(time:number)=>void>=[];
- const mat=(color:number)=>{let m=materials.get(color);if(!m){m=new THREE.MeshStandardMaterial({color,roughness:.82,metalness:0});materials.set(color,m)}return m};
+ const mat=(color:number)=>{let m=materials.get(color);if(!m){m=new THREE.MeshStandardMaterial({color,roughness:.9,metalness:0});materials.set(color,m)}return m};
  function mesh(parent:THREE.Object3D,g:THREE.BufferGeometry,color:number,p:Point){geometries.add(g);const m=new THREE.Mesh(g,mat(color));m.position.set(...p);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
- function box(parent:THREE.Object3D,size:Point,p:Point,color:number,r=.04){return mesh(parent,new RoundedBoxGeometry(...size,2,Math.min(r,...size.map(n=>n/3))),color,p)}
- function ball(parent:THREE.Object3D,size:Point,p:Point,color:number){const m=mesh(parent,new THREE.SphereGeometry(1,16,12),color,p);m.scale.set(...size);return m}
+ function box(parent:THREE.Object3D,size:Point,p:Point,color:number,r=.04){return mesh(parent,new RoundedBoxGeometry(...size,3,Math.min(r,...size.map(n=>n/3))),color,p)}
+ function ball(parent:THREE.Object3D,size:Point,p:Point,color:number){const m=mesh(parent,new THREE.SphereGeometry(1,20,16),color,p);m.scale.set(...size);return m}
  function cylinder(parent:THREE.Object3D,r:number,h:number,p:Point,color:number){return mesh(parent,new THREE.CylinderGeometry(r,r,h,16),color,p)}
  const unit=new THREE.CylinderGeometry(1,1,1,12);geometries.add(unit);
  function segment(parent:THREE.Object3D,r:number,color:number){const m=new THREE.Mesh(unit,mat(color));m.castShadow=true;parent.add(m);return {set:(a:Point,b:Point)=>{const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),delta=bv.clone().sub(av);m.position.copy(av.add(bv).multiplyScalar(.5));m.scale.set(r,delta.length(),r);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize())},mesh:m}}
@@ -31,16 +31,17 @@ export function createFocusWorld(kind:FocusScene){
   const hip=standing?1.0:gesture==='cycle'?.8:.65;
   const body=mesh(g,new THREE.CapsuleGeometry(.225,.19,6,16),palette.clay,[0,hip+.29,0]);body.name='hoodie';body.scale.z=.85;
   cylinder(g,.075,.12,[0,hip+.63,0],palette.skin);
-  const head=new THREE.Group();head.position.set(0,hip+.85,0);g.add(head);
+  const eyes:THREE.Mesh[]=[];
+  const head=new THREE.Group();head.position.set(0,hip+.85,0);head.scale.setScalar(1.07);g.add(head);
   ball(head,[.255,.29,.25],[0,0,0],palette.skin);
   mesh(head,new THREE.SphereGeometry(.267,20,12,0,Math.PI*2,0,Math.PI*.55),palette.hair,[0,.027,-.013]);
   ball(head,[.24,.08,.14],[0,.15,.16],palette.hair);
-  for(const side of [-1,1]){ball(head,[.024,.027,.017],[side*.087,.01,.239],palette.ink);ball(head,[.045,.067,.04],[side*.248,-.01,0],palette.skin)}
+  for(const side of [-1,1]){eyes.push(ball(head,[.024,.027,.017],[side*.087,.01,.239],palette.ink));ball(head,[.035,.018,.009],[side*.145,-.065,.224],0xe9ad9e);ball(head,[.045,.067,.04],[side*.248,-.01,0],palette.skin)}
   ball(head,[.03,.036,.026],[0,-.04,.247],palette.skin);
-  const arms=[-1,1].map(side=>({side,upper:segment(g,.085,palette.clay),lower:segment(g,.054,palette.skin),hand:ball(g,[.06,.065,.062],[0,0,0],palette.skin)}));
+  const arms=[-1,1].map(side=>({side,upper:segment(g,.085,palette.clay),lower:segment(g,.054,palette.skin),hand:ball(g,[.06,.065,.062],[0,0,0],palette.skin),elbow:ball(g,[.065,.065,.065],[0,0,0],palette.skin)}));
   const legs=[-1,1].map(side=>({side,upper:segment(g,.095,palette.pants),lower:segment(g,.075,palette.pants),shoe:box(g,[.17,.13,.28],[0,0,0],palette.cream,.05)}));
   const setPose=(t:number)=>{
-   head.rotation.z=Math.sin(t*.7)*.018;head.rotation.x=gesture==='read'?.12:gesture==='rest'?-.035:.045;
+   const blink=t%7.5;eyes.forEach(eye=>eye.scale.y=.027*(blink>7.25?Math.max(.12,Math.abs(blink-7.375)*8):1));body.scale.y=1+Math.sin(t*.85)*.009;head.rotation.z=Math.sin(t*.7)*.018;head.rotation.x=gesture==='read'?.12:gesture==='rest'?-.035:.045;
    for(const a of arms){const s=a.side;let wrist:Point=[s*.23,hip+.34,.4],elbow:Point=[s*.3,hip+.22,.13];
     if(gesture==='type')wrist=[s*.21,hip+.35+Math.sin(t*3.5+s)*.016,.42];
     if(gesture==='read')wrist=[s*.16,hip+.41,.38];
@@ -48,7 +49,7 @@ export function createFocusWorld(kind:FocusScene){
     if(gesture==='cook'){wrist=s===1?[.09+Math.sin(t*.9)*.06,1.48,.77+Math.cos(t*.9)*.055]:[-.24,1.23,.47];elbow=[s*.3,1.19,.2]}
     if(gesture==='cats')wrist=s===1?[.28,hip+.53,.47]:[-.27,hip+.13,.24];
     if(gesture==='rest')wrist=[s*.3,hip+.16,.25];
-    a.upper.set([s*.23,hip+.49,0],elbow);a.lower.set(elbow,wrist);a.hand.position.set(...wrist);
+    a.upper.set([s*.23,hip+.49,0],elbow);a.lower.set(elbow,wrist);a.hand.position.set(...wrist);a.elbow.position.set(...elbow);
    }
    for(const l of legs){const s=l.side;let knee:Point=[s*.14,standing?.56:.46,standing?.015:.32],foot:Point=[s*.15,.135,standing?.06:.38];
     if(gesture==='cycle'){const angle=t*1.45+(s===1?Math.PI:0);foot=[s*.22,.48+Math.sin(angle)*.19,.49+Math.cos(angle)*.19];knee=[s*.19,.64+Math.sin(angle)*.05,.24]}
@@ -59,9 +60,9 @@ export function createFocusWorld(kind:FocusScene){
  // An open miniature room, shared across activities.
  box(root,[5.05,.25,4.25],[0,-.13,0],palette.cream,.16);
  box(root,[4.84,.08,4.06],[0,.01,0],palette.floor,.03);
- for(let x=-1.8;x<2.3;x+=.58)box(root,[.013,.003,3.95],[x,.053,0],0xd9bd99,.001);
+ for(let x=-1.8;x<2.3;x+=.8)box(root,[.013,.003,3.95],[x,.053,0],0xd9bd99,.001);
  box(root,[4.94,2.55,.12],[0,1.27,-2.01],palette.wall,.04);
- box(root,[.12,2.55,4.07],[-2.43,1.27,-.025],0xd8e5dc,.04);
+ box(root,[.12,2.55,4.07],[-2.43,1.27,-.025],0xe4e7ed,.04);
  // Framed window, with dimensional scenery behind the panes.
  box(root,[1.7,1.38,.07],[-.82,1.63,-1.925],0xf8f5e9,.03);
  box(root,[1.52,1.22,.035],[-.82,1.63,-1.878],0xb9d7d5,.01);
@@ -75,7 +76,7 @@ export function createFocusWorld(kind:FocusScene){
  for(let i=0;i<5;i++)box(root,[.11,.28+i%2*.08,.18],[.7+i*.13,1.98+i%2*.04,-1.77],[palette.clay,palette.green,palette.blue,0xd4b064,0xe3d1ae][i],.012);
  plant(1.9,-1.45,.88);
  // The rug anchors the activity area.
- box(root,[3.1,.025,2.65],[.1,.071,.15],kind==='cycling'?0x91aaa2:0xd9b89b,.12);
+ box(root,[3.1,.025,2.65],[.1,.071,.15],kind==='cycling'?0xb4c8c7:kind==='reading'?0xd2c2d9:0xe4c8b7,.12);
 
  if(kind==='desk'){
   const g=person(.72,.05,-Math.PI/2,false,'type');chair(g);

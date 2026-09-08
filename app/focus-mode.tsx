@@ -9,16 +9,16 @@ import {focusElapsed,type FocusScene} from '@/lib/focus';
 import {clock,elapsed,hm,type Block} from '@/lib/planner';
 import {NextStepCard,TimerCheck,RecoverButton} from './recovery-controls';
 import ActivityScene from './activity-scene';
+import {useMotionPreferences} from './motion-preferences';
 
 type Props={nextStep:string,onNote:()=>void,reviewDue:boolean,onReview:()=>void,onRecover:()=>void,open:boolean,title:string,scene:FocusScene,block?:Block,next?:Block,date:string,startedAt?:number,savedMs:number,now:number,running:boolean,done:boolean,busy:boolean,loading:boolean,error:string,online:boolean,syncing:boolean,canStart:boolean,canFinish:boolean,canUndo:boolean,onUndo:()=>void,onClose:()=>void,onStart:()=>void,onPause:()=>void,onFinish:()=>void,onNext:()=>void,onChoose:()=>void,onRecord:()=>void};
 export default function FocusMode(p:Props){
  const {tr,focusScenes,blockTitle,blockNote}=useLanguage();
 
- const [motion,setMotion]=useState(true),[reduced,setReduced]=useState(false),[sceneOverride,setSceneOverride]=useState<FocusScene|'auto'>('auto');
+ const {enabled:motion,reduced,toggle:toggleMotion}=useMotionPreferences();
+ const [sceneOverride,setSceneOverride]=useState<FocusScene|'auto'>('auto');
  const heading=useRef<HTMLHeadingElement>(null);
- useEffect(()=>{const media=window.matchMedia('(prefers-reduced-motion: reduce)');const update=()=>setReduced(media.matches);update();media.addEventListener('change',update);try{setMotion(localStorage.getItem('liubai-focus-motion')!=='off')}catch{}return()=>media.removeEventListener('change',update)},[]);
  useEffect(()=>setSceneOverride('auto'),[p.block?.id]);
- function toggleMotion(){const next=!motion;setMotion(next);try{localStorage.setItem('liubai-focus-motion',next?'on':'off')}catch{}}
  const displayScene=sceneOverride==='auto'?p.scene:sceneOverride;
  const total=focusElapsed(p.savedMs,p.running?p.startedAt:undefined,p.now);
  const paused=!p.running&&!p.done&&p.savedMs>0;
@@ -29,7 +29,7 @@ export default function FocusMode(p:Props){
     {p.loading?<div className="scene-loading"><Loader2 className="spin"/>{tr("正在接上你的一天…")}</div>:<ActivityScene scene={displayScene} moving={p.running&&motion&&!reduced}/>}
     <div className="scene-caption"><span>{focusScenes[displayScene]}</span><span>{p.done?tr("这一项完成了"):p.running?(motion&&!reduced?tr("陪你慢慢推进"):tr("静止画面")):paused?tr("休息一下，再继续"):tr("准备好了再开始")}</span></div>
    </div>
-   <section className="focus-task-panel">
+   <section className={"focus-task-panel "+(p.done?"task-completed":"")}>
     <div className={'focus-state-label '+(p.done?'is-complete':'')}><span>{p.done?<Check size={17}/>:p.running?<Clock3 size={17}/>:<Pause size={17}/>}</span>{p.done?tr("完成一件事了"):p.running?tr("现在正在做"):paused?tr("已暂停"):tr("接下来，专心做")}</div>
     <DialogTitle ref={heading} tabIndex={-1} className="focus-task-title">{p.title||tr("选择一件想做的事")}</DialogTitle>
     <DialogDescription className="focus-task-description">{blockNote(p.block)||tr("先做眼前这一小步。")}</DialogDescription>
@@ -45,6 +45,6 @@ export default function FocusMode(p:Props){
     {p.next&&<div className="focus-next-peek"><span>{tr("下一项 · ")}{hm(p.next.start)}</span><strong>{blockTitle(p.next)}</strong><small>{tr("等你准备好，再切换。")}</small></div>}
    </section>
   </div>
-  <footer className="focus-space-footer"><span>{p.running?tr("退出专注或切到其他标签页，计时仍会继续。"):tr("按 Esc 可回到日程。")}</span><details className="focus-scene-settings"><summary><Settings2 size={17}/>{tr("画面设置")}</summary><div><Button variant="outline" onClick={toggleMotion} aria-pressed={!motion} disabled={reduced}>{reduced?tr("跟随系统：减少动态效果"):motion?tr("让画面静止"):tr("恢复轻动画")}</Button><label><span>{tr("活动场景")}</span><NativeSelect value={sceneOverride} onChange={e=>setSceneOverride(e.target.value as FocusScene|'auto')}><option value="auto">{tr("自动 · ")}{focusScenes[p.scene]}</option>{Object.entries(focusScenes).map(([key,title])=><option key={key} value={key}>{title}</option>)}</NativeSelect></label></div></details></footer>
+  <footer className="focus-space-footer"><span>{p.running?tr("退出专注或切到其他标签页，计时仍会继续。"):tr("按 Esc 可回到日程。")}</span><details className="focus-scene-settings"><summary><Settings2 size={17}/>{tr("画面设置")}</summary><div><Button variant="outline" onClick={toggleMotion} aria-pressed={motion&&!reduced} disabled={reduced}>{reduced?tr("跟随系统：减少动态效果"):motion?tr("关闭动态效果"):tr("开启动效")}</Button><label><span>{tr("活动场景")}</span><NativeSelect value={sceneOverride} onChange={e=>setSceneOverride(e.target.value as FocusScene|'auto')}><option value="auto">{tr("自动 · ")}{focusScenes[p.scene]}</option>{Object.entries(focusScenes).map(([key,title])=><option key={key} value={key}>{title}</option>)}</NativeSelect></label></div></details></footer>
  </DialogContent></Dialog>
 }
