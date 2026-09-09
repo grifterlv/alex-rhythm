@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./interactions.css";
+import "./calendar.css";
 import {MotionProvider} from './motion-preferences';
 import {LanguageProvider} from './language-provider';
 

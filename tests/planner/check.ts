@@ -95,3 +95,4 @@ await import('./focus-check');
 await import('./recovery-check');
 await import('./overview-check');
 await import('./i18n-check');
+await import('./calendar-check');

@@ -1,0 +1,21 @@
+.calendar-trigger{white-space:nowrap;flex-shrink:0;min-width:8rem}
+.calendar-dialog{width:calc(100vw - 32px);max-width:570px!important;max-height:calc(100dvh - 40px);overflow-y:auto;background:var(--background);color:var(--foreground);padding:28px}
+.calendar-dialog [data-slot=dialog-title]{font-size:1.35rem;padding-right:24px;line-height:1.5}
+.calendar-dialog [data-slot=dialog-description]{font-size:1rem;color:var(--muted-foreground);line-height:1.7}
+.calendar-account{display:flex;gap:12px;align-items:center;border:1px solid var(--border);background:var(--card);border-radius:12px;padding:16px;flex-wrap:wrap}
+.calendar-account>div{min-width:0;flex:1}
+.calendar-account strong,.calendar-account div>span{display:block;overflow-wrap:anywhere}
+.calendar-account div>span{font-size:.875rem;color:var(--muted-foreground);margin-top:4px}
+.calendar-status{font-size:.875rem;white-space:nowrap;color:var(--primary)}
+.calendar-explanation{padding-left:22px;margin:0;font-size:.9375rem;line-height:1.8;color:var(--muted-foreground)}
+.calendar-explanation li+li{margin-top:8px}
+.calendar-last-sync{font-size:.875rem;color:var(--muted-foreground)}
+.calendar-notice,.calendar-setup-note,.calendar-confirm{padding:14px 16px;border:1px solid var(--border);background:var(--accent);border-radius:10px;font-size:.9375rem;line-height:1.8;overflow-wrap:anywhere}
+.calendar-apple{border-top:1px solid var(--border);padding-top:16px;font-size:.9375rem;line-height:1.8}
+.calendar-apple summary{cursor:pointer;font-weight:550}
+.calendar-apple p{margin:12px 0;color:var(--muted-foreground)}
+.calendar-apple a{display:inline-flex;align-items:center;gap:6px;text-decoration:underline;color:var(--primary)}
+.calendar-actions,.calendar-confirm>div{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.calendar-confirm>div{margin-top:12px}
+.calendar-dialog [data-slot=button]{min-height:44px;height:auto;white-space:normal}
+@media(max-width:760px){.calendar-dialog{padding:24px 18px}.calendar-actions [data-slot=button]{flex:1 1 auto}}

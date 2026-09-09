@@ -2392,3 +2392,163 @@ export const messages: Record<string, readonly [string, string]> = {
     "Falló la conexión. Inténtalo de nuevo."
   ]
 };
+
+// Calendar connection and sync status.
+Object.assign(messages, {
+  "日历连接": [
+    "Calendar connection",
+    "Conexión de calendario"
+  ],
+  "连接 Google Calendar": [
+    "Connect Google Calendar",
+    "Conectar Google Calendar"
+  ],
+  "把已确认的安排带到你的日历。": [
+    "Bring your confirmed schedule to your calendar.",
+    "Lleva tu horario confirmado a tu calendario."
+  ],
+  "尚未配置": [
+    "Setup needed",
+    "Requiere configuración"
+  ],
+  "未连接": [
+    "Not connected",
+    "Sin conectar"
+  ],
+  "同步需要处理": [
+    "Sync needs attention",
+    "La sincronización necesita atención"
+  ],
+  "等待同步": [
+    "Waiting to sync",
+    "Esperando sincronización"
+  ],
+  "已同步": [
+    "Up to date",
+    "Actualizado"
+  ],
+  "独立日历 Alex Rhythm：同步已保存的时间块，包括固定作息。": [
+    "A separate Alex Rhythm calendar for saved time blocks, including fixed routines.",
+    "Un calendario Alex Rhythm independiente para los bloques guardados, incluidas las rutinas fijas."
+  ],
+  "同步昨天、今天及未来 60 天；草稿、待办池和实际用时不进入日历。": [
+    "Sync yesterday, today and the next 60 days. Drafts, backlog tasks and tracked time stay in the planner.",
+    "Sincroniza ayer, hoy y los próximos 60 días. Los borradores, las tareas pendientes y el tiempo registrado permanecen en el planificador."
+  ],
+  "请在网站修改安排。修改会更新原事件，取消会移除对应事件。": [
+    "Edit schedules on this website. Changes update existing events; cancellations remove the corresponding events.",
+    "Edita los horarios en este sitio. Los cambios actualizan los eventos existentes; las cancelaciones eliminan los eventos correspondientes."
+  ],
+  "网页打开时自动同步，关闭后未完成的同步会在下次打开时继续。": [
+    "Sync runs automatically while this page is open. Unfinished sync resumes when you return.",
+    "La sincronización es automática mientras la página está abierta. Si queda pendiente, continuará cuando vuelvas."
+  ],
+  "事件默认不提醒，避免通知过多；可在日历中自行设置。": [
+    "Event reminders are off by default. You can adjust them in your calendar.",
+    "Los recordatorios están desactivados de forma predeterminada. Puedes ajustarlos en tu calendario."
+  ],
+  "上次同步：": [
+    "Last synced: ",
+    "Última sincronización: "
+  ],
+  "在 Apple 日历中查看": [
+    "View in Apple Calendar",
+    "Ver en Calendario de Apple"
+  ],
+  "在 iPhone 或 Mac 的日历账户设置中添加同一个 Google 账户，再勾选 Alex Rhythm 日历。": [
+    "Add the same Google account in your iPhone or Mac calendar account settings, then select the Alex Rhythm calendar.",
+    "Añade la misma cuenta de Google en los ajustes de cuentas de calendario de tu iPhone o Mac y selecciona el calendario Alex Rhythm."
+  ],
+  "查看设置说明": [
+    "View setup instructions",
+    "Ver instrucciones de configuración"
+  ],
+  "停止后不再更新 Google 日历，已有事件会保留。确定断开？": [
+    "Disconnecting stops future updates. Existing Google Calendar events will remain. Disconnect?",
+    "Al desconectar se detienen las actualizaciones. Los eventos existentes en Google Calendar se conservarán. ¿Desconectar?"
+  ],
+  "这会新建一个同步日历，旧日历和其中的事件会保留。请先检查 Google Calendar，避免同时显示两份安排。": [
+    "This creates a new sync calendar and keeps the old calendar and its events. Check Google Calendar first to avoid displaying two copies of your schedule.",
+    "Se creará un nuevo calendario de sincronización y se conservarán el anterior y sus eventos. Revisa primero Google Calendar para evitar mostrar dos copias de tu horario."
+  ],
+  "确认断开": [
+    "Disconnect",
+    "Confirmar desconexión"
+  ],
+  "新建同步日历": [
+    "Create a new sync calendar",
+    "Crear un calendario de sincronización"
+  ],
+  "立即同步": [
+    "Sync now",
+    "Sincronizar ahora"
+  ],
+  "重新连接 Google": [
+    "Reconnect Google",
+    "Reconectar Google"
+  ],
+  "断开连接": [
+    "Disconnect",
+    "Desconectar"
+  ],
+  "连接 Google 账户": [
+    "Connect Google account",
+    "Conectar cuenta de Google"
+  ],
+  "已停止同步，Google 日历中的已有事件仍然保留。": [
+    "Sync stopped. Existing events remain in Google Calendar.",
+    "La sincronización se detuvo. Los eventos existentes se conservan en Google Calendar."
+  ],
+  "日历连接尚未配置，请先完成 Google 应用设置。": [
+    "Calendar connection is not configured yet. Complete the Google app setup first.",
+    "La conexión del calendario aún no está configurada. Completa primero la configuración de la aplicación de Google."
+  ],
+  "Google 授权已失效，请重新连接。": [
+    "Google authorization has expired or been revoked. Please reconnect.",
+    "La autorización de Google ha caducado o se ha revocado. Vuelve a conectar."
+  ],
+  "没有获得所需的日历权限，请重新连接并允许访问。": [
+    "Calendar access was not granted. Reconnect and allow the requested access.",
+    "No se concedió acceso al calendario. Vuelve a conectar y permite el acceso solicitado."
+  ],
+  "同步日历无法访问。请在 Google Calendar 恢复该日历，或检查账户授权。": [
+    "The sync calendar is unavailable. Restore it in Google Calendar or check account access.",
+    "El calendario de sincronización no está disponible. Restáuralo en Google Calendar o revisa el acceso de la cuenta."
+  ],
+  "Google 暂时限制了同步频率，稍后会重试。": [
+    "Google temporarily limited syncing. We will retry later.",
+    "Google limitó temporalmente la sincronización. Se volverá a intentar más tarde."
+  ],
+  "暂时无法连接 Google，已保存的安排会在重试时继续同步。": [
+    "Google is temporarily unreachable. Your saved schedule will sync when the connection recovers.",
+    "Google no está disponible temporalmente. Tu horario guardado se sincronizará cuando se recupere la conexión."
+  ],
+  "有一个时间块遇到夏令时冲突，请检查其开始和结束时间。": [
+    "A time block conflicts with a daylight-saving transition. Check its start and end times.",
+    "Un bloque coincide con un cambio de horario de verano. Revisa sus horas de inicio y fin."
+  ],
+  "这次连接已过期或来自另一窗口，请重新连接。": [
+    "This connection attempt expired or came from another window. Please reconnect.",
+    "Este intento de conexión caducó o provino de otra ventana. Vuelve a conectar."
+  ],
+  "你取消了 Google 连接，日程没有变化。": [
+    "You canceled the Google connection. Your schedule is unchanged.",
+    "Cancelaste la conexión con Google. Tu horario no cambió."
+  ],
+  "另一页面正在同步，请稍候。": [
+    "Another page is syncing. Please wait.",
+    "Otra página se está sincronizando. Espera un momento."
+  ],
+  "Google 未确认日历创建结果。请先检查 Google Calendar，再选择是否新建同步日历。": [
+    "Google did not confirm calendar creation. Check Google Calendar before choosing to create a new sync calendar.",
+    "Google no confirmó la creación del calendario. Revisa Google Calendar antes de crear uno nuevo."
+  ],
+  "暂时无法读取日历连接，请重试。": [
+    "Cannot read the calendar connection right now. Please retry.",
+    "No se puede consultar la conexión del calendario ahora. Vuelve a intentarlo."
+  ],
+  "重试": [
+    "Retry",
+    "Reintentar"
+  ]
+});
